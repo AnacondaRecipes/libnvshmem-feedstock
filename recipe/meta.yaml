@@ -231,6 +231,7 @@ outputs:
         - python {{ python }}
         - setuptools >=62                           # needed by pyproject.toml
       run:
+        - python
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
         - cuda-core 0.3.2
         - cuda-python {{ cuda_major }}
