@@ -24,7 +24,8 @@ source:
 
 build:
   number: 0
-  skip: true  # [not linux64 or cuda_compiler_version in (None, "None")]
+  # aarch64 only supported on SBSA (Grace) — source archives require arm_variant_type == "sbsa"
+  skip: true  # [(not linux64 and not (aarch64 and arm_variant_type == "sbsa")) or cuda_compiler_version in (None, "None")]
 
 requirements:
   build:
