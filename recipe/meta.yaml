@@ -18,9 +18,9 @@ source:
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-sbsa/libnvshmem-linux-sbsa-{{ version }}_cuda13-archive.tar.xz"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
     sha256: "080e2ca6df463a5f3f5f50a3923ef5d491503837343649a922cb17718689fc06"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
   # Python source only available as _cuda12 for this version; nvshmem4py skips CUDA 13 builds
-  - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda12-archive.tar.xz"
-    folder: nvshmem4py
-    sha256: "35292393b4370b23f177f0a1b549bde92931bf14bd66b0d54065ea11579e0b0b"
+  - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda12-archive.tar.xz"  # [(cuda_compiler_version or "").startswith("12")]
+    folder: nvshmem4py  # [(cuda_compiler_version or "").startswith("12")]
+    sha256: "35292393b4370b23f177f0a1b549bde92931bf14bd66b0d54065ea11579e0b0b"  # [(cuda_compiler_version or "").startswith("12")]
 
 build:
   number: 0
@@ -236,11 +236,14 @@ outputs:
         - cuda-python {{ cuda_major }}
         - numpy
     test:
+      requires:
+        - pip
       imports:
         - nvshmem
         - nvshmem.core
         - nvshmem.bindings
       commands:
+        - pip check
         - |
           python - <<EOF
           import nvshmem, sys
