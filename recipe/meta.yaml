@@ -197,6 +197,7 @@ outputs:
         - make
         - cuda-version {{ cuda_compiler_version }}                     # [cuda_compiler_version != "None"]
         - {{ compiler('cuda') }}
+        - cuda-cccl                                                    # [cuda_compiler_version != "None"]
       files:
         - compile_perf_test.sh
       commands:
