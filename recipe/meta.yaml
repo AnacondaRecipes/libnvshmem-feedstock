@@ -59,13 +59,13 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}  # [cuda_compiler_version != "None"]
         - cuda-cudart-dev
-        - ucx
+        - ucx >=1.20
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - cuda-cudart
         - libpciaccess
         - nccl
-        - ucx
+        - ucx >=1.20
     test:
       commands:
         - test -L $PREFIX/lib/libnvshmem_host.so.{{ soname }}
