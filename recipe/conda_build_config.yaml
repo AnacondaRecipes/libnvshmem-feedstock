@@ -1,3 +1,14 @@
+## Overrides aggregate CBC (12.4) — CUDA 12.4 is incompatible with GCC 14.
+## cuda_compiler repeated here to ensure correct variant pairing.
+cuda_compiler:                     # [linux]
+  - cuda-nvcc                      # [linux]
+
+cuda_compiler_version:             # [linux]
+  - 12.9                           # [linux]
+  - 13.0                           # [linux]
+  - 13.1                           # [linux]
+
+# Exclude 3.14: nvshmem4py requires py<=313 (skip: true  # [py>313])
 python:
   - 3.10
   - 3.11

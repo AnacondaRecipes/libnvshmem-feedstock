@@ -17,6 +17,7 @@ source:
     sha256: "21c1efe6777dbfcbbc92444b420aab399f5b5590284ce09f1ccd8ec3516b192c"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("12") and arm_variant_type == "sbsa"]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-sbsa/libnvshmem-linux-sbsa-{{ version }}_cuda13-archive.tar.xz"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
     sha256: "080e2ca6df463a5f3f5f50a3923ef5d491503837343649a922cb17718689fc06"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
+  # Python source only available as _cuda12 for this version; nvshmem4py skips CUDA 13 builds
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda12-archive.tar.xz"
     folder: nvshmem4py
     sha256: "35292393b4370b23f177f0a1b549bde92931bf14bd66b0d54065ea11579e0b0b"
@@ -207,12 +208,13 @@ outputs:
     version: {{ nvshmem4py_version }}
     build:
       ignore_run_exports_from:
-        - {{ compiler("cxx") }}
+        - {{ compiler("cxx") }}   # libstdc++ provided transitively via libnvshmem-dev -> libnvshmem3
         - cuda-cudart-dev
       ignore_run_exports:
         - cuda-version
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
-      skip: true  # [py<310 or py>313 or cuda_compiler_version in (None, "None")]
+      # cuda-core 0.3.2 only available for CUDA 12 on pkgs/main
+      skip: true  # [py<310 or py>313 or cuda_compiler_version in (None, "None") or not (cuda_compiler_version or "").startswith("12")]
       script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
     requirements:
       build:
