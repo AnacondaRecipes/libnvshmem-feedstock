@@ -237,14 +237,12 @@ outputs:
         - cuda-python {{ cuda_major }}
         - numpy
     test:
-      requires:
-        - pip
       imports:
         - nvshmem
         - nvshmem.core
         - nvshmem.bindings
       commands:
-        - pip check
+        # pip check skipped: PyPI metadata uses different package names (nvidia-nvshmem-cu12, cuda.core)
         - |
           python - <<EOF
           import nvshmem, sys
