@@ -242,7 +242,6 @@ outputs:
         - nvshmem.core
         - nvshmem.bindings
       commands:
-        # pip check skipped: PyPI metadata uses different package names (nvidia-nvshmem-cu12, cuda.core)
         - |
           python - <<EOF
           import nvshmem, sys
