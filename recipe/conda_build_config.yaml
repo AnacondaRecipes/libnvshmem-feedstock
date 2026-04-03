@@ -1,9 +1,6 @@
-## Overrides aggregate CBC (12.4) — CUDA 12.4 is incompatible with GCC 14.
-## cuda_compiler repeated here to ensure correct variant pairing.
-cuda_compiler:                     # [linux]
-  - cuda-nvcc                      # [linux]
+arm_variant_type:
+  - sbsa
 
 cuda_compiler_version:             # [linux]
   - 12.9                           # [linux]
   - 13.0                           # [linux]
-  - 13.1                           # [linux]
