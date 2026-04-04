@@ -251,6 +251,22 @@ outputs:
           import nvshmem, sys
           print("nvshmem.__version__ =", nvshmem.__version__)
           EOF
+        - |
+          python - <<EOF
+          import nvshmem.core as shmem
+          from cuda.core.experimental import Device
+          dev = Device(0)
+          dev.set_current()
+          shmem.init(device=dev, initializer_method="uid", rank=0, nranks=1, uid=shmem.get_unique_id())
+          buf = shmem.memory.buffer(1024)
+          assert buf is not None, "buffer allocation returned None"
+          assert buf.size == 1024, f"expected size 1024, got {buf.size}"
+          print("buffer size:", buf.size)
+          shmem.memory.free(buf)
+          shmem.finalize()
+          print("OK")
+          EOF
+
     about:
       home: https://docs.nvidia.com/nvshmem/index.html
       license: LicenseRef-NVIDIA-End-User-License-Agreement
