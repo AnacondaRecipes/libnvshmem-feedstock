@@ -68,6 +68,9 @@ outputs:
         - ucx >=1.20
     test:
       commands:
+        # Maintainability TODO:
+        #   * Check for "soname" on the next release and make sure it is consistent on all shared libraries
+        #   * Use {{ soname }} variable instead of numbers if "soname" is consistent
         - test -L $PREFIX/lib/libnvshmem_host.so.3
         - test -f $PREFIX/lib/libnvshmem_host.so.{{ version }}
         - test -L $PREFIX/lib/nvshmem_bootstrap_mpi.so.3
@@ -140,8 +143,8 @@ outputs:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
-        - libpciaccess  # [linux64 and (cuda_compiler_version or "").startswith("13")]
-        - libhwloc      # [linux64 and (cuda_compiler_version or "").startswith("12")]
+        - libpciaccess  # [linux64 and (cuda_compiler_version or "").startswith("12")]
+        - libhwloc      # [linux64 and (cuda_compiler_version or "").startswith("13")]
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - {{ pin_subpackage("libnvshmem" ~ soname, exact=True) }}
@@ -277,6 +280,7 @@ outputs:
       description: |
         C++ accelerated Python bindings for NVIDIA NVSHMEM built with Cython. NVIDIA NVSHMEM is an NVIDIA based "shared memory" library that provides an easy-to-use CPU-side interface to allocate pinned memory that is symmetrically distributed across a cluster of NVIDIA GPUs.
       doc_url: https://docs.nvidia.com/nvshmem/api/index.html
+      dev_url: https://github.com/NVIDIA/nvshmem
 
 about:
   home: https://docs.nvidia.com/nvshmem/index.html
@@ -289,6 +293,7 @@ about:
     NVIDIA NVSHMEM is an NVIDIA based "shared memory" library that provides an easy-to-use CPU-side interface to allocate pinned memory that is symmetrically distributed across a cluster of NVIDIA GPUs.
     NVSHMEM can significantly reduce communication and coordination overheads by allowing programmers to perform these operations from within CUDA kernels and on CUDA streams.
   doc_url: https://docs.nvidia.com/nvshmem/api/index.html
+  dev_url: https://github.com/NVIDIA/nvshmem
 
 extra:
   recipe-maintainers:
