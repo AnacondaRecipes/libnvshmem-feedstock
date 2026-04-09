@@ -1,5 +1,5 @@
-arm_variant_type:
-  - sbsa
+arm_variant_type:  # [linux and aarch64]
+  - sbsa           # [linux and aarch64]
 
 cuda_compiler_version:             # [linux]
   - 12.9                           # [linux]
