@@ -1,13 +1,7 @@
+
 #!/bin/bash
 
 set -ex
-
-# CUDA 12.x nvcc EDG frontend cannot parse GCC 14's <type_traits> builtins
-# (__is_nothrow_new_constructible, __is_pair). CUDA 13+ has updated EDG.
-if [[ "${cuda_compiler_version}" =~ ^12\. ]]; then
-  echo "Skipping compile test: CUDA ${cuda_compiler_version} nvcc incompatible with GCC 14 type_traits"
-  exit 0
-fi
 
 #GPU Arch - anything recent should do but change accordingly if build breaks
 SM=89
@@ -35,11 +29,33 @@ export CXXFLAGS="${CXXFLAGS} -fno-use-linker-plugin"
 echo CC =  $CC
 echo CXX =  $CXX
 
+# Why NVCC_APPEND_FLAGS?
+#
+#  NVCC resolves conflicting flags by using the last value. We use NVCC_APPEND_FLAGS
+#  to ensure our flags come after those set in the package configuration.
+#
+#  Reference: https://github.com/AnacondaRecipes/nccl-feedstock/blob/nccl-2.25/recipe/build.sh
+#
+#  Added flags:
+#
+#    -std=c++17: GCC 14's libstdc++ headers use C++17 inline variables and built-in traits
+#      that NVCC's EDG frontend cannot parse unless host compilation is also C++17.
+#      Since package build configuration / tooling almost always have a hardcoded '-std=c++11',
+#      addition of this flag produces a harmless warning:
+#      "nvcc warning : incompatible redefinition for option 'std', the last value of this option was used"
+#
+NVCC_MAJOR=$(nvcc --version | grep -oP 'release \K[0-9]+')
+echo "NVCC_MAJOR=${NVCC_MAJOR}"
+if [[ "${NVCC_MAJOR}" == "12" ]]; then
+  export NVCC_APPEND_FLAGS="${NVCC_APPEND_FLAGS} -std=c++17"
+fi
+
 cmake -S $PREFIX/share/src/examples \
   -DCMAKE_LIBRARY_PATH=${GCC_DIR} \
   -DCMAKE_C_COMPILER=$CC \
   -DCMAKE_CUDA_COMPILER=$PREFIX/bin/nvcc \
   -DCMAKE_CXX_COMPILER=$CXX \
+  -DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH;$PREFIX/${targetsDir}/lib/cmake" \
   -DCUDAToolkit_INCLUDE_DIRECTORIES="$PREFIX/include;$PREFIX/${targetsDir}/include" \
   -DNVSHMEM_MPI_SUPPORT=0 \
   -DNVSHMEM_PREFIX=$PREFIX \
