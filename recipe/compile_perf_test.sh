@@ -29,6 +29,27 @@ export CXXFLAGS="${CXXFLAGS} -fno-use-linker-plugin"
 echo CC =  $CC
 echo CXX =  $CXX
 
+# Why NVCC_APPEND_FLAGS?
+#
+#  NVCC resolves conflicting flags by using the last value. We use NVCC_APPEND_FLAGS
+#  to ensure our flags come after those set in the package configuration.
+#
+#  Reference: https://github.com/AnacondaRecipes/nccl-feedstock/blob/nccl-2.25/recipe/build.sh
+#
+#  Added flags:
+#
+#    -std=c++17: GCC 14's libstdc++ headers use C++17 inline variables and built-in traits
+#      that NVCC's EDG frontend cannot parse unless host compilation is also C++17.
+#      Since package build configuration / tooling almost always have a hardcoded '-std=c++11',
+#      addition of this flag produces a harmless warning:
+#      "nvcc warning : incompatible redefinition for option 'std', the last value of this option was used"
+#
+NVCC_MAJOR=$(nvcc --version | grep -oP 'release \K[0-9]+')
+echo "NVCC_MAJOR=${NVCC_MAJOR}"
+if [[ "${NVCC_MAJOR}" == "12" ]]; then
+  export NVCC_APPEND_FLAGS="${NVCC_APPEND_FLAGS} -std=c++17"
+fi
+
 cmake -S $PREFIX/share/src/examples \
   -DCMAKE_LIBRARY_PATH=${GCC_DIR} \
   -DCMAKE_C_COMPILER=$CC \
