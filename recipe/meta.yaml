@@ -23,7 +23,8 @@ source:
     folder: nvshmem4py
     sha256: "7722baaa29c2f89194d93825bfebbce4cb397af7831eb85eda16b780b75a359f"
 build:
-  number: 0
+  # Rebuild against libhwloc 2.13.0 (libnvshmem-dev host dep, cuda13). PKG-14778
+  number: 1
   skip: true  # [osx or win]
 
 requirements:
@@ -59,7 +60,7 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
-        - ucx >=1.20
+        - ucx {{ ucx }}
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - cuda-cudart
@@ -143,8 +144,8 @@ outputs:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
-        - libpciaccess  # [linux64 and (cuda_compiler_version or "").startswith("12")]
-        - libhwloc      # [linux64 and (cuda_compiler_version or "").startswith("13")]
+        - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
+        - libhwloc {{ libhwloc }} # [linux64 and (cuda_compiler_version or "").startswith("13")]
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - {{ pin_subpackage("libnvshmem" ~ soname, exact=True) }}
@@ -296,5 +297,8 @@ about:
   dev_url: https://github.com/NVIDIA/nvshmem
 
 extra:
+  # Keep license_url on NVIDIA feedstocks; skip the V1-deprecation lint (team convention).
+  skip-lints:
+    - deprecate_license_url
   recipe-maintainers:
     - conda-forge/cuda
