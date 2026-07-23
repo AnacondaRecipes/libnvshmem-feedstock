@@ -23,7 +23,8 @@ source:
     folder: nvshmem4py
     sha256: "7722baaa29c2f89194d93825bfebbce4cb397af7831eb85eda16b780b75a359f"
 build:
-  number: 0
+  # Rebuild against libhwloc 2.13.0 (libnvshmem-dev host dep, cuda13). PKG-14778
+  number: 1
   skip: true  # [osx or win]
 
 requirements:
