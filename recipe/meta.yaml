@@ -225,7 +225,7 @@ outputs:
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
       # cuda-core 0.4.2 is not available for Python 3.14
       skip: true  # [py<310 or py>313]
-    script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
+      script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
     requirements:
       build:
         - {{ stdlib("c") }}
