@@ -60,7 +60,7 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
-        - ucx >=1.20
+        - ucx {{ ucx }}
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - cuda-cudart
@@ -225,7 +225,7 @@ outputs:
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
       # cuda-core 0.4.2 is not available for Python 3.14
       skip: true  # [py<310 or py>313]
-      script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
+    script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
     requirements:
       build:
         - {{ stdlib("c") }}
@@ -297,5 +297,8 @@ about:
   dev_url: https://github.com/NVIDIA/nvshmem
 
 extra:
+  # Keep license_url on NVIDIA feedstocks; skip the V1-deprecation lint (team convention).
+  skip-lints:
+    - deprecate_license_url
   recipe-maintainers:
     - conda-forge/cuda
