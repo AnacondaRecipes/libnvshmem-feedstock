@@ -144,8 +144,8 @@ outputs:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
         # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
-        - {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
-        - {{ libhwloc }} # [linux64 and (cuda_compiler_version or "").startswith("13")]
+        - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
+        - libhwloc {{ libhwloc }} # [linux64 and (cuda_compiler_version or "").startswith("13")]
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - {{ pin_subpackage("libnvshmem" ~ soname, exact=True) }}
