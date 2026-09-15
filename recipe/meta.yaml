@@ -63,8 +63,7 @@ outputs:
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - cuda-cudart
-        - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
-        - libhwloc {{ libhwloc }}      # [linux64 and (cuda_compiler_version or "").startswith("13")]
+        - libpciaccess
         - nccl
         - ucx >=1.20
     test:
