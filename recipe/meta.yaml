@@ -21,9 +21,15 @@ source:
     sha256: "e93f9a7cc1aa324806c579db181a0511907ce3a6980070d7557815ad13cf17af"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda13-archive.tar.xz"
     folder: nvshmem4py
+    # Translate the wheel's requires_dist to what conda can satisfy so pip
+    # check can stay enabled: nvidia-nvshmem-cu13 is provided by the
+    # libnvshmem outputs below, and the cuda.core/cuda.pathfinder dev-snapshot
+    # pins are relaxed to the ranges the channel carries.
+    patches:
+      - patches/0001-nvshmem4py-translate-pypi-deps-for-conda.patch
     sha256: "7722baaa29c2f89194d93825bfebbce4cb397af7831eb85eda16b780b75a359f"
 build:
-  number: 1
+  number: 2
   skip: true  # [osx or win]
 
 requirements:
@@ -106,7 +112,8 @@ outputs:
         # driver
         - "*libcuda.so*"
         # avoids: ERROR (libnvshmem-dev,bin/perftest/device/pt-to-pt/shmem_put_bw): lib/libnvshmem_host.so.3 not found in any packages. We DO test for its existence though.
-        - "*libnvshmem_host.so.3"
+        # (DT_NEEDED entries carry the lib/ prefix; the pattern must not start with * because the linter's variant producer re-parses it as a YAML alias)
+        - "lib/libnvshmem_host.so.*"
         - "*libmpi*"
         - "*libpmix*"
         - "*liboshmem*"
@@ -236,19 +243,29 @@ outputs:
         - pip
         - setuptools >=68
         - cython >=0.29.24
+        # version is dynamic via setuptools_scm (fallback 0.2.1); without it the
+        # wheel metadata records version 0.0.0 and pip check loses meaning
+        - setuptools-scm
         - cuda-version {{ cuda_compiler_version }}
       run:
         - python
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
         - cuda-core {{ cuda_core_version }}
         - cuda-python {{ cuda_major }}
+        # upstream pyproject runtime deps (cython, cuda.pathfinder) — the wheel
+        # metadata declares them, so pip check fails without them in run
+        - cython >=0.29.24
+        - cuda-pathfinder >=1.2.3,<2
         - numpy
     test:
+      requires:
+        - pip
       imports:
         - nvshmem
         - nvshmem.core
         - nvshmem.bindings
       commands:
+        - pip check
         - |
           python - <<EOF
           import nvshmem, sys

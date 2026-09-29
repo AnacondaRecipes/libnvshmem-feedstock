@@ -1,0 +1,41 @@
+From 856a9a828e511fdd34f3f798c5f082e107101d8b Mon Sep 17 00:00:00 2001
+From: Steven <scrass@anaconda.com>
+Date: Tue, 29 Sep 2026 15:32:53 -0600
+Subject: [PATCH] Translate PyPI redist deps and dev-snapshot pins for conda
+
+pip check runs against the built wheel's requires_dist, so the metadata
+must be satisfiable by conda packages:
+
+- nvidia-nvshmem-cu13 is the PyPI redistributable of the NVSHMEM shared
+  library; in conda the same objects are provided by this feedstock's
+  libnvshmem3/libnvshmem-dev outputs (exact-pinned in nvshmem4py run
+  deps). Drop the PyPI-name dep.
+- cuda.core==0.4 and cuda.pathfinder==1.2.3 are dev-snapshot pins of the
+  nvshmem4py authors; the conda channel carries cuda-core 0.4.2 and
+  cuda-pathfinder 1.8.x, which cannot satisfy strict equality. Relax to
+  the compatible range the pins were tracking.
+- cython and numpy stay as upstream declares them.
+---
+ pyproject.toml | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 8404db3..b22638b 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -18,10 +18,9 @@ authors = [
+ readme = "README.md"
+ requires-python = ">=3.9"
+ dependencies = [
+-    "nvidia-nvshmem-cu13",
+     "cuda-python>=13.0,<14.0",
+-    "cuda.core==0.4",
+-    "cuda.pathfinder==1.2.3",
++    "cuda.core>=0.4,<0.5",
++    "cuda.pathfinder>=1.2.3,<2",
+     "numpy",
+     "Cython>=0.29.24"
+ ]
+-- 
+2.50.1 (Apple Git-155)
+
