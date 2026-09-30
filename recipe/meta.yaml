@@ -64,7 +64,9 @@ outputs:
         - {{ stdlib("c") }}
       host:
         - cuda-version {{ cuda_compiler_version }}
-        - cuda-cudart-dev
+        - cuda-cudart-dev {{ cuda_compiler_version }}
+        - libpciaccess {{ libpciaccess }}
+        - nccl {{ nccl }}
         - ucx {{ ucx }}
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
@@ -148,7 +150,7 @@ outputs:
         - {{ compiler('cuda') }}
       host:
         - cuda-version {{ cuda_compiler_version }}
-        - cuda-cudart-dev
+        - cuda-cudart-dev {{ cuda_compiler_version }}
         # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
         - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
         - libhwloc {{ libhwloc }}      # [linux64 and (cuda_compiler_version or "").startswith("13")]
@@ -231,7 +233,9 @@ outputs:
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
       # cuda-core 0.4.2 is not available for Python 3.14
       skip: true  # [py<310 or py>313]
-      script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
+    # The wheel's cuda-python lower bound is relaxed to 12.9 by the recipe
+    # patch so the CUDA 12 variants (cuda-python 12.9.x) satisfy pip check.
+    script: nvshmem4py-build.sh
     requirements:
       build:
         - {{ stdlib("c") }}
@@ -254,7 +258,7 @@ outputs:
         - cuda-python {{ cuda_major }}
         # upstream pyproject runtime deps (cython, cuda.pathfinder) — the wheel
         # metadata declares them, so pip check fails without them in run
-        - cython >=0.29.24
+        - cython >=0.29.24  # analint: python_build_tools_in_host  # upstream declares Cython as a runtime dependency (requires_dist)
         - cuda-pathfinder >=1.2.3,<2
         - numpy
     test:
