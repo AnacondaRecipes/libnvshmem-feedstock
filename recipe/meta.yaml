@@ -21,9 +21,15 @@ source:
     sha256: "e93f9a7cc1aa324806c579db181a0511907ce3a6980070d7557815ad13cf17af"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda13-archive.tar.xz"
     folder: nvshmem4py
+    # Translate the wheel's requires_dist to what conda can satisfy so pip
+    # check can stay enabled: nvidia-nvshmem-cu13 is provided by the
+    # libnvshmem outputs below, and the cuda.core/cuda.pathfinder dev-snapshot
+    # pins are relaxed to the ranges the channel carries.
+    patches:
+      - patches/0001-nvshmem4py-translate-pypi-deps-for-conda.patch
     sha256: "7722baaa29c2f89194d93825bfebbce4cb397af7831eb85eda16b780b75a359f"
 build:
-  number: 1
+  number: 2
   skip: true  # [osx or win]
 
 requirements:
@@ -58,7 +64,9 @@ outputs:
         - {{ stdlib("c") }}
       host:
         - cuda-version {{ cuda_compiler_version }}
-        - cuda-cudart-dev
+        - cuda-cudart-dev {{ cuda_compiler_version }}
+        - libpciaccess {{ libpciaccess }}
+        - nccl {{ nccl }}
         - ucx {{ ucx }}
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
@@ -106,7 +114,8 @@ outputs:
         # driver
         - "*libcuda.so*"
         # avoids: ERROR (libnvshmem-dev,bin/perftest/device/pt-to-pt/shmem_put_bw): lib/libnvshmem_host.so.3 not found in any packages. We DO test for its existence though.
-        - "*libnvshmem_host.so.3"
+        # (DT_NEEDED entries carry the lib/ prefix; the pattern must not start with * because the linter's variant producer re-parses it as a YAML alias)
+        - "lib/libnvshmem_host.so.*"
         - "*libmpi*"
         - "*libpmix*"
         - "*liboshmem*"
@@ -141,7 +150,7 @@ outputs:
         - {{ compiler('cuda') }}
       host:
         - cuda-version {{ cuda_compiler_version }}
-        - cuda-cudart-dev
+        - cuda-cudart-dev {{ cuda_compiler_version }}
         # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
         - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
         - libhwloc {{ libhwloc }}      # [linux64 and (cuda_compiler_version or "").startswith("13")]
@@ -224,7 +233,9 @@ outputs:
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
       # cuda-core 0.4.2 is not available for Python 3.14
       skip: true  # [py<310 or py>313]
-      script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
+    # The wheel's cuda-python lower bound is relaxed to 12.9 by the recipe
+    # patch so the CUDA 12 variants (cuda-python 12.9.x) satisfy pip check.
+    script: nvshmem4py-build.sh
     requirements:
       build:
         - {{ stdlib("c") }}
@@ -236,19 +247,29 @@ outputs:
         - pip
         - setuptools >=68
         - cython >=0.29.24
+        # version is dynamic via setuptools_scm (fallback 0.2.1); without it the
+        # wheel metadata records version 0.0.0 and pip check loses meaning
+        - setuptools-scm
         - cuda-version {{ cuda_compiler_version }}
       run:
         - python
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
         - cuda-core {{ cuda_core_version }}
         - cuda-python {{ cuda_major }}
+        # upstream pyproject runtime deps (cython, cuda.pathfinder) — the wheel
+        # metadata declares them, so pip check fails without them in run
+        - cython >=0.29.24  # analint: python_build_tools_in_host  # upstream declares Cython as a runtime dependency (requires_dist)
+        - cuda-pathfinder >=1.2.3,<2
         - numpy
     test:
+      requires:
+        - pip
       imports:
         - nvshmem
         - nvshmem.core
         - nvshmem.bindings
       commands:
+        - pip check
         - |
           python - <<EOF
           import nvshmem, sys

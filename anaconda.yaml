@@ -1,0 +1,12 @@
+anaconda_config_version: 1
+upstream_sources:
+  # nvshmem4py ships in lockstep with libnvshmem in NVIDIA's redist and has no
+  # conda-forge package of its own; track the libnvshmem release for all outputs.
+  - webpage:
+      url: https://api.anaconda.org/package/conda-forge/libnvshmem
+      regex: '"version":\s*"([^"]+)"'
+    packages:
+      - libnvshmem3
+      - libnvshmem-dev
+      - libnvshmem-static
+      - nvshmem4py
