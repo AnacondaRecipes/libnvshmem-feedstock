@@ -1,0 +1,9 @@
+anaconda_config_version: 1
+upstream_sources:
+  - webpage:
+      url: https://api.anaconda.org/package/conda-forge/libnvshmem-dev
+      regex: '"version":\s*"([^"]+)"'
+    packages:
+      - libnvshmem0
+      - libnvshmem-dev
+      - libnvshmem-static
