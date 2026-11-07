@@ -1,6 +1,9 @@
 arm_variant_type:  # [linux and aarch64]
   - sbsa           # [linux and aarch64]
 
+# Anaconda: the aggregate CBC would also render a cuda_compiler_version "None"
+# row on linux, which this feedstock cannot build (it repacks prebuilt CUDA
+# archives). List the two CUDA rows we do support explicitly.
 cuda_compiler_version:             # [linux]
   - 12.9                           # [linux]
   - 13.0                           # [linux]

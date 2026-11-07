@@ -67,6 +67,8 @@ outputs:
         - cuda-cudart
         - libpciaccess
         - nccl
+        # Anaconda: keep the runtime on a ucx release that actually has the
+        # transports we link against; stale repodata can otherwise resolve 1.18.1.
         - ucx >=1.20
     test:
       commands:
@@ -111,6 +113,10 @@ outputs:
         - "*libmpi*"
         - "*libpmix*"
         - "*liboshmem*"
+        # Anaconda: the bundled hydra launchers call no libxml2 functions but still
+        # carry a NEEDED entry for libxml2.so.2, so the loader needs it present.
+        # Both defaults and conda-forge ship libxml2 >= 2.14 as libxml2.so.16,
+        # so this can only be satisfied by the system copy.
         - "*libxml2.so.2"
       run_exports:
         - {{ pin_subpackage("libnvshmem" ~ soname, max_pin=None) }}
@@ -142,6 +148,8 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
+        # Anaconda: the bundled hydra launchers are dynamically linked against
+        # hwloc in both CUDA rows and against libpciaccess in the CUDA 13 row.
         - libpciaccess
         - libhwloc
       run:
@@ -208,6 +216,8 @@ outputs:
         - cmake
         - make
         - cuda-version {{ cuda_compiler_version }}
+        # Anaconda: the NVSHMEM headers include CCCL headers (cuda/std/...,
+        # cooperative_groups), which are not pulled in by cuda-nvcc here.
         - cuda-cccl
       files:
         - compile_perf_test.sh
@@ -245,6 +255,8 @@ outputs:
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
         - cuda-core >=0.5.0
         - cuda-pathfinder >=1.2.3
+        # Anaconda: the CUDA 12 wheel is incompatible with cuda-python 13.x and
+        # vice versa, so only allow the matching major version.
         - cuda-python {{ cuda_major }}
         - numpy
     test:
@@ -258,10 +270,12 @@ outputs:
           import nvshmem, sys
           print("nvshmem.__version__ =", nvshmem.__version__)
           EOF
+        # Anaconda: exercise a real init / allocation / finalize cycle instead of
+        # only importing the module, so a broken device runtime is caught here.
         - |
           python - <<EOF
           import nvshmem.core as shmem
-          from cuda.core.experimental import Device
+          from cuda.core import Device
           dev = Device(0)
           dev.set_current()
           shmem.init(device=dev, initializer_method="uid", rank=0, nranks=1, uid=shmem.get_unique_id())
