@@ -16,4 +16,9 @@ fi
 
 cd nvshmem4py/
 
+# Anaconda: setuptools_scm cannot infer a version from the source archive (no
+# git tag), so without this the wheel metadata records a guessed version
+# instead of the version of the conda package.
+export SETUPTOOLS_SCM_PRETEND_VERSION="${PKG_VERSION}"
+
 $PYTHON -m pip install --no-deps --no-build-isolation -vvv .

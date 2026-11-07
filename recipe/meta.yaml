@@ -21,6 +21,13 @@ source:
     sha256: "949de817686f8d65c278c5e644c86c69271d63945db2ca71a40c2f7db9b134f6"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda{{ cuda_major }}-archive.tar.xz"
     folder: nvshmem4py
+    # Anaconda: translate the wheel's requires_dist to what conda can satisfy
+    # so that `pip check` can stay enabled as a test. The PyPI redistributable
+    # (nvidia-nvshmem-*) is provided by the libnvshmem outputs below, and the
+    # CUDA 12 metadata pins cuda-python to a release the channel does not carry.
+    patches:
+      - patches/0001-nvshmem4py-conda-deps-cu12.patch  # [(cuda_compiler_version or "").startswith("12")]
+      - patches/0001-nvshmem4py-conda-deps-cu13.patch  # [(cuda_compiler_version or "").startswith("13")]
     sha256: "38455f031095d4a65e7d669a27cdabb4c8cd19550a74e4b433e0e45a33f7b57b"  # [(cuda_compiler_version or "").startswith("12")]
     sha256: "19b9a2bd67e3d9615f3d082b5f4319a8acb83140a56868a9db5a77b9c1221064"  # [(cuda_compiler_version or "").startswith("13")]
 
@@ -254,17 +261,23 @@ outputs:
         - python
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
         - cuda-core >=0.5.0
-        - cuda-pathfinder >=1.2.3
+        - cuda-pathfinder >=1.2.3,<2
         # Anaconda: the CUDA 12 wheel is incompatible with cuda-python 13.x and
         # vice versa, so only allow the matching major version.
         - cuda-python {{ cuda_major }}
         - numpy
+        # Anaconda: upstream declares Cython as a runtime dependency in
+        # requires_dist, so pip check needs it installed.
+        - cython >=0.29.24  # analint: python_build_tools_in_host
     test:
+      requires:
+        - pip
       imports:
         - nvshmem
         - nvshmem.core
         - nvshmem.bindings
       commands:
+        - pip check
         - |
           python - <<EOF
           import nvshmem, sys
