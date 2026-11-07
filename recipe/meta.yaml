@@ -290,10 +290,13 @@ outputs:
 
     about:
       home: https://docs.nvidia.com/nvshmem/index.html
-      license: LicenseRef-NVIDIA-End-User-License-Agreement
+      # Anaconda: the nvshmem_python source archive is licensed under the Apache
+      # License 2.0 (the LICENSE file also carries a BSD-3-Clause notice for an
+      # optional googletest dependency); it is not covered by NVIDIA's end-user
+      # license agreement that applies to the libnvshmem binaries above.
+      license: Apache-2.0
       license_file: LICENSE
-      license_url: https://docs.nvidia.com/nvshmem/api/sla.html
-      license_family: Other
+      license_family: Apache
       summary: C++ accelerated Python bindings for NVIDIA NVSHMEM built with Cython
       description: |
         C++ accelerated Python bindings for NVIDIA NVSHMEM built with Cython. NVIDIA NVSHMEM is an NVIDIA based "shared memory" library that provides an easy-to-use CPU-side interface to allocate pinned memory that is symmetrically distributed across a cluster of NVIDIA GPUs.
