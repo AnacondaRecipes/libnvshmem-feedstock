@@ -10,6 +10,6 @@ cp -rv bin $PREFIX/
 cp -rv include $PREFIX/
 cp -rv lib/cmake $PREFIX/lib/
 cp -rv lib/*nvshmem*.so* $PREFIX/lib
-cp -rv lib/*nvshmem*.bc $PREFIX/lib
+cp -rv lib/*nvshmem*.bc* $PREFIX/lib
 cp -rv lib/*nvshmem*.a $PREFIX/lib
 cp -rv share/ $PREFIX/

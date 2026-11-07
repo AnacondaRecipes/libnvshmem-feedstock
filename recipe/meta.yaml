@@ -1,7 +1,7 @@
-{% set version = "3.5.21" %}
-{% set nvshmem4py_version = "0.2.1.37385429" %}
-# main channel has cuda-core=0.4.2
-{% set cuda_core_version = "0.4.2" %}
+{% set version = "3.8.0" %}
+# NVIDIA publishes the CUDA 12 and CUDA 13 nvshmem_python sources under different build IDs.
+{% set nvshmem4py_version = "0.4.0.38976383" %}  # [(cuda_compiler_version or "").startswith("12")]
+{% set nvshmem4py_version = "0.4.0.38966635" %}  # [(cuda_compiler_version or "").startswith("13")]
 
 {% set soname = version.split(".")[0] %}
 {% set cuda_major = environ.get("cuda_compiler_version", "13.0").split(".")[0] %}
@@ -12,18 +12,20 @@ package:
 
 source:
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-x86_64/libnvshmem-linux-x86_64-{{ version }}_cuda12-archive.tar.xz"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("12")]
-    sha256: "2da5d57c78c6d701f1255362dd0a364ae4e2d178bbc7d449628da2453087d25b"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("12")]
+    sha256: "328461eef448a2c7daa02efb36ff839d7811f1f563782979052b75796656b4cf"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("12")]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-x86_64/libnvshmem-linux-x86_64-{{ version }}_cuda13-archive.tar.xz"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("13")]
-    sha256: "ce5a3c717a51a512cadfa04ea3275309d8639b35be6e681a8e71d0c53d12ce13"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("13")]
+    sha256: "254f6df1e9860d44b0d8a88f0a779f3881213031547cf28d71bb6d40e821e6ae"  # [linux and x86_64 and (cuda_compiler_version or "").startswith("13")]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-sbsa/libnvshmem-linux-sbsa-{{ version }}_cuda12-archive.tar.xz"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("12") and arm_variant_type == "sbsa"]
-    sha256: "42e77cc02ba8f0728d100e5b2a070585869cd5dcaac4190c580527302ec37f02"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("12") and arm_variant_type == "sbsa"]
+    sha256: "31f61615ec521b65d3ec6ae03c63a985b5eead7a8e906eea913b3d5bddbe021d"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("12") and arm_variant_type == "sbsa"]
   - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/libnvshmem/linux-sbsa/libnvshmem-linux-sbsa-{{ version }}_cuda13-archive.tar.xz"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
-    sha256: "e93f9a7cc1aa324806c579db181a0511907ce3a6980070d7557815ad13cf17af"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
-  - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda13-archive.tar.xz"
+    sha256: "949de817686f8d65c278c5e644c86c69271d63945db2ca71a40c2f7db9b134f6"  # [linux and aarch64 and (cuda_compiler_version or "").startswith("13") and arm_variant_type == "sbsa"]
+  - url: "https://developer.download.nvidia.com/compute/nvshmem/redist/nvshmem_python/source/nvshmem_python-source-{{ nvshmem4py_version }}_cuda{{ cuda_major }}-archive.tar.xz"
     folder: nvshmem4py
-    sha256: "7722baaa29c2f89194d93825bfebbce4cb397af7831eb85eda16b780b75a359f"
+    sha256: "38455f031095d4a65e7d669a27cdabb4c8cd19550a74e4b433e0e45a33f7b57b"  # [(cuda_compiler_version or "").startswith("12")]
+    sha256: "19b9a2bd67e3d9615f3d082b5f4319a8acb83140a56868a9db5a77b9c1221064"  # [(cuda_compiler_version or "").startswith("13")]
+
 build:
-  number: 1
+  number: 0
   skip: true  # [osx or win]
 
 requirements:
@@ -49,7 +51,7 @@ outputs:
         - "*rdma-core*"  # omitted as dependency - MOFED replaces rdma-core
     files:
       - lib/*nvshmem*.so.*
-      - lib/*nvshmem*.bc
+      - lib/*nvshmem*.bc*
     requirements:
       build:
         - {{ compiler('c') }}
@@ -59,7 +61,7 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
-        - ucx {{ ucx }}
+        - ucx
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - cuda-cudart
@@ -68,9 +70,6 @@ outputs:
         - ucx >=1.20
     test:
       commands:
-        # Maintainability TODO:
-        #   * Check for "soname" on the next release and make sure it is consistent on all shared libraries
-        #   * Use {{ soname }} variable instead of numbers if "soname" is consistent
         - test -L $PREFIX/lib/libnvshmem_host.so.3
         - test -f $PREFIX/lib/libnvshmem_host.so.{{ version }}
         - test -L $PREFIX/lib/nvshmem_bootstrap_mpi.so.3
@@ -85,16 +84,18 @@ outputs:
         - test -f $PREFIX/lib/nvshmem_bootstrap_shmem.so.3.0.0
         - test -L $PREFIX/lib/nvshmem_bootstrap_uid.so.3
         - test -f $PREFIX/lib/nvshmem_bootstrap_uid.so.3.0.0
-        - test -L $PREFIX/lib/nvshmem_transport_ibdevx.so.4
-        - test -f $PREFIX/lib/nvshmem_transport_ibdevx.so.4.0.0
-        - test -L $PREFIX/lib/nvshmem_transport_ibgda.so.4
-        - test -f $PREFIX/lib/nvshmem_transport_ibgda.so.4.0.0
-        - test -L $PREFIX/lib/nvshmem_transport_ibrc.so.4
-        - test -f $PREFIX/lib/nvshmem_transport_ibrc.so.4.0.0
-        - test -L $PREFIX/lib/nvshmem_transport_libfabric.so.4
-        - test -f $PREFIX/lib/nvshmem_transport_libfabric.so.4.0.0
-        - test -L $PREFIX/lib/nvshmem_transport_ucx.so.4
-        - test -f $PREFIX/lib/nvshmem_transport_ucx.so.4.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_gpunetio.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_gpunetio.so.7.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_ibdevx.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_ibdevx.so.7.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_ibgda.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_ibgda.so.7.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_ibrc.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_ibrc.so.7.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_libfabric.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_libfabric.so.7.0.0
+        - test -L $PREFIX/lib/nvshmem_transport_ucx.so.7
+        - test -f $PREFIX/lib/nvshmem_transport_ucx.so.7.0.0
 
   - name: libnvshmem-dev
     build:
@@ -110,10 +111,7 @@ outputs:
         - "*libmpi*"
         - "*libpmix*"
         - "*liboshmem*"
-        # ERROR (libnvshmem-dev,bin/hydra_persist): $RPATH/libhwloc.so.15 not found in packages, sysroot(s) nor the missing_dso_whitelist.
-        - "*libhwloc*"
-        # ERROR (libnvshmem-dev,bin/hydra_nameserver): $RPATH/libpciaccess.so.0 not found in packages, sysroot(s) nor the missing_dso_whitelist.
-        - "*libpciaccess*"
+        - "*libxml2.so.2"
       run_exports:
         - {{ pin_subpackage("libnvshmem" ~ soname, max_pin=None) }}
     files:
@@ -128,10 +126,12 @@ outputs:
       - include/device
       - include/device_host
       - include/device_host_transport
+      - include/gpunetio
       - include/host
       - include/non_abi
       - lib/cmake/nvshmem
       - lib/*nvshmem*.so
+      - share/skills
       - share/src
     requirements:
       build:
@@ -142,9 +142,8 @@ outputs:
       host:
         - cuda-version {{ cuda_compiler_version }}
         - cuda-cudart-dev
-        # We only support Grace CPUs with our ARM package. Grace has NVLink C2C so we don't need all the PCIe utilities
-        - libpciaccess {{ libpciaccess }} # [linux64 and (cuda_compiler_version or "").startswith("12")]
-        - libhwloc {{ libhwloc }}      # [linux64 and (cuda_compiler_version or "").startswith("13")]
+        - libpciaccess
+        - libhwloc
       run:
         - {{ pin_compatible("cuda-version", min_pin="x", max_pin="x") }}
         - {{ pin_subpackage("libnvshmem" ~ soname, exact=True) }}
@@ -170,6 +169,7 @@ outputs:
         - test -f $PREFIX/include/host/nvshmem_api.h
         - test -f $PREFIX/include/non_abi/device/coll/defines.cuh
         - test -f $PREFIX/include/device_host_transport/nvshmem_constants.h
+        - test -f $PREFIX/include/gpunetio/doca_gpunetio_host.h
         - test -f $PREFIX/include/nvshmem.h
         - test -f $PREFIX/include/nvshmemx.h
         - test -f $PREFIX/lib/cmake/nvshmem/NVSHMEMConfig.cmake
@@ -185,11 +185,13 @@ outputs:
         - test -L $PREFIX/lib/nvshmem_bootstrap_pmix.so
         - test -L $PREFIX/lib/nvshmem_bootstrap_shmem.so
         - test -L $PREFIX/lib/nvshmem_bootstrap_uid.so
+        - test -L $PREFIX/lib/nvshmem_transport_gpunetio.so
         - test -L $PREFIX/lib/nvshmem_transport_ibdevx.so
         - test -L $PREFIX/lib/nvshmem_transport_ibgda.so
         - test -L $PREFIX/lib/nvshmem_transport_ibrc.so
         - test -L $PREFIX/lib/nvshmem_transport_libfabric.so
         - test -L $PREFIX/lib/nvshmem_transport_ucx.so
+        - test -f $PREFIX/share/skills/nvshmem-install/SKILL.md
 
   - name: libnvshmem-static
     files:
@@ -222,8 +224,7 @@ outputs:
       ignore_run_exports:
         - cuda-version
       string: "py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
-      # cuda-core 0.4.2 is not available for Python 3.14
-      skip: true  # [py<310 or py>313]
+      skip: true  # [py<311 or py>314 or cuda_compiler_version in (None, "None")]
       script: bash ${RECIPE_DIR}/nvshmem4py-build.sh
     requirements:
       build:
@@ -234,13 +235,16 @@ outputs:
       host:
         - python
         - pip
-        - setuptools >=68
-        - cython >=0.29.24
+        - setuptools >=62   # required by pyproject.toml
+        - setuptools_scm    # required by pyproject.toml
+        - wheel             # required by pyproject.toml
+        - cython >=0.29.24  # required by pyproject.toml
         - cuda-version {{ cuda_compiler_version }}
       run:
         - python
         - {{ pin_subpackage("libnvshmem-dev", exact=True) }}
-        - cuda-core {{ cuda_core_version }}
+        - cuda-core >=0.5.0
+        - cuda-pathfinder >=1.2.3
         - cuda-python {{ cuda_major }}
         - numpy
     test:
