@@ -1,0 +1,54 @@
+From 4d9370e70df37aa5f784c0729c191de6e9829447 Mon Sep 17 00:00:00 2001
+From: Steven Crass <scrass@anaconda.com>
+Date: Sat, 7 Nov 2026 14:45:14 -0800
+Subject: [PATCH] Translate the PyPI redistributable dependency for conda
+
+pip check runs against the built wheel's requires_dist, so the metadata must be
+satisfiable by conda packages. nvidia-nvshmem-cu12 is the PyPI redistributable
+of the NVSHMEM shared library; in conda the same objects are provided by this
+feedstock's libnvshmem3/libnvshmem-dev outputs, which are exact-pinned in the
+nvshmem4py run requirements. Drop the PyPI-name dependency from both files that
+feed the generated metadata.
+
+setup.py passes requirements_cuda12.txt to install_requires while pyproject.toml
+also declares the runtime dependencies (setuptools prefers the pyproject
+values), so both files have to be patched to keep the wheel metadata
+consistent.
+
+Originally proposed in
+https://github.com/AnacondaRecipes/libnvshmem-feedstock/pull/5.
+---
+ pyproject.toml          | 3 +--
+ requirements_cuda12.txt | 3 +--
+ 2 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 9b69261..4ad90b3 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -18,8 +18,7 @@ authors = [
+ readme = "README.md"
+ requires-python = ">=3.9"
+ dependencies = [
+-    "nvidia-nvshmem-cu12",
+-    "cuda-python>=12.0,<=12.9",
++    "cuda-python>=12.0,<13.0",
+     "cuda.core>=0.5.0",
+     "cuda.pathfinder>=1.2.3",
+     "numpy",
+diff --git a/requirements_cuda12.txt b/requirements_cuda12.txt
+index 7ad0c1c..2519668 100644
+--- a/requirements_cuda12.txt
++++ b/requirements_cuda12.txt
+@@ -1,7 +1,6 @@
+ # These are the run-time dependencies of nvshmem4py
+ # They are non-negotiables
+-nvidia-nvshmem-cu12
+-cuda-python>=12.0,<=12.9
++cuda-python>=12.0,<13.0
+ cuda.core>=0.5.0
+ cuda.pathfinder>=1.2.3
+ numpy
+-- 
+2.54.0 (Apple Git-157)
+

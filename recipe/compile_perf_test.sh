@@ -29,7 +29,7 @@ export CXXFLAGS="${CXXFLAGS} -fno-use-linker-plugin"
 echo CC =  $CC
 echo CXX =  $CXX
 
-# Why NVCC_APPEND_FLAGS?
+# Anaconda: why NVCC_APPEND_FLAGS?
 #
 #  NVCC resolves conflicting flags by using the last value. We use NVCC_APPEND_FLAGS
 #  to ensure our flags come after those set in the package configuration.

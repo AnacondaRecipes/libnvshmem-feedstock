@@ -4,6 +4,6 @@ upstream_sources:
       url: https://api.anaconda.org/package/conda-forge/libnvshmem-dev
       regex: '"version":\s*"([^"]+)"'
     packages:
-      - libnvshmem0
+      - libnvshmem3
       - libnvshmem-dev
       - libnvshmem-static
